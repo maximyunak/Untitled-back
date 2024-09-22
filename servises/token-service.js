@@ -1,9 +1,12 @@
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
+const ApiError = require("../exceptions/api-error");
 // const tokenModel = require('../models/token-model');
 
 class tokenService {
   generateTokens(payload) {
-    const accessToken = jwt.sign(payload, process.env.JWT_ACCESS_SECRET, { expiresIn: '10d' });
+    const accessToken = jwt.sign(payload, process.env.JWT_ACCESS_SECRET, {
+      expiresIn: "10d",
+    });
     return {
       accessToken,
     };
@@ -14,7 +17,7 @@ class tokenService {
       const userData = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
       return userData;
     } catch (error) {
-      return null;
+      throw ApiError.BadRequest("Incorrect token");
     }
   }
 }

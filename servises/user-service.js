@@ -1,13 +1,21 @@
-const userModel = require('../models/user-model');
-const bcrypt = require('bcrypt');
-const uuid = require('uuid');
-const UserDto = require('../dtos/user-dto');
-const ApiError = require('../exceptions/api-error');
-const eventModel = require('../models/event-model');
-const tokenService = require('./token-service');
+const userModel = require("../models/user-model");
+const bcrypt = require("bcrypt");
+const uuid = require("uuid");
+const UserDto = require("../dtos/user-dto");
+const ApiError = require("../exceptions/api-error");
+const eventModel = require("../models/event-model");
+const tokenService = require("./token-service");
 
 class UserService {
-  async registration(email, password, country, firstname, lastname, dateOfBirth, preferences) {
+  async registration(
+    email,
+    password,
+    country,
+    firstname,
+    lastname,
+    dateOfBirth,
+    preferences
+  ) {
     const candidate = await userModel.findOne({ email });
     if (candidate) {
       throw ApiError.BadRequest(`User with email ${email} already exists`);
@@ -38,11 +46,11 @@ class UserService {
   async login(email, password) {
     const user = await userModel.findOne({ email });
     if (!user) {
-      throw ApiError.BadRequest('Пользователь не найден');
+      throw ApiError.BadRequest("Пользователь не найден");
     }
     const isPassEquals = await bcrypt.compare(password, user.password);
     if (!isPassEquals) {
-      throw ApiError.BadRequest('Неверный пароль');
+      throw ApiError.BadRequest("Неверный пароль");
     }
 
     const userDto = new UserDto(user);

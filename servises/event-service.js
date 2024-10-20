@@ -4,6 +4,7 @@ const uuid = require('uuid');
 const UserDto = require('../dtos/user-dto');
 const ApiError = require('../exceptions/api-error');
 const eventModel = require('../models/event-model');
+const tokenService = require('./token-service');
 
 class EventService {
   async getEvents(filter, page = 1, limit = 10) {
@@ -14,11 +15,23 @@ class EventService {
       query.eventTypes = { $in: filter.eventTypes };
     }
 
+    // Если передана страна, добавляем фильтр по country
+    if (filter.countries && filter.countries.length > 0) {
+      query.country = { $in: filter.countries };
+    }
+
+    // Если передан title, добавляем фильтр по title
+    if (filter.title) {
+      query.title = { $regex: filter.title, $options: 'i' }; // Ищем по частичному совпадению без учета регистра
+    }
+
     // Вычисляем количество пропускаемых событий (для пагинации)
     const skip = (page - 1) * limit;
 
     // Получаем отфильтрованные события с учетом пагинации
     const events = await eventModel.find(query).skip(skip).limit(limit);
+    // .populate('comments') // Подгружаем комментарии
+    // .populate('creator', ['firstname', 'lastname']);
 
     // Также получаем общее количество событий для подсчета страниц
     const totalEvents = await eventModel.countDocuments(query);
@@ -29,6 +42,20 @@ class EventService {
       totalPages: Math.ceil(totalEvents / limit),
       currentPage: page,
     };
+  }
+
+  async getMyEvents(token) {
+    const user = tokenService.validateAccessToken(token);
+    console.log(user);
+
+    if (!user) {
+      return null; // Or throw an error if token is invalid
+    }
+
+    const events = await eventModel.find({
+      creator: { $in: await userModel.find({ email: user.email }).select('_id') },
+    });
+    return events;
   }
 
   async getEvent(eventId) {

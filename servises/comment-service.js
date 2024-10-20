@@ -42,17 +42,17 @@ class CommentService {
     const comments = await commentModel
       .find({ eventId })
       .sort({ createdAt: -1 }) // Сортировка по дате создания (например, по убыванию)
-      .skip(skip) // Пропускаем нужное количество комментариев
-      .limit(Number(limit)); // Ограничиваем количество комментариев
+      // .skip(skip) // Пропускаем нужное количество комментариев
+      // .limit(Number(limit)) // Ограничиваем количество комментариев
+      .populate('creator', ['firstname', 'lastname']);
 
     const totalComments = await commentModel.countDocuments({ eventId }); // Общее количество комментариев
 
-    return {
-      comments,
-      totalComments,
-      totalPages: Math.ceil(totalComments / limit),
-      currentPage: Number(page),
-    };
+    return comments;
+    // comments;
+    // // totalComments,
+    // // totalPages: Math.ceil(totalComments / limit),
+    // // currentPage: Number(page),
   }
 
   async updateComment(commentId, commentBody) {

@@ -1,13 +1,12 @@
-const { sendError } = require('../exceptions/sendError');
-const userModel = require('../models/user-model');
-const tokenService = require('../servises/token-service');
-const userService = require('../servises/user-service');
+const { sendError } = require("../exceptions/sendError");
+const userModel = require("../models/user-model");
+const tokenService = require("../servises/token-service");
+const userService = require("../servises/user-service");
 
 class UserController {
   async registration(req, res, next) {
     try {
-      const { email, password, country, firstname, lastname, dateOfBirth, preferences } = req.body;
-      const userData = await userService.registration(
+      const {
         email,
         password,
         country,
@@ -15,6 +14,15 @@ class UserController {
         lastname,
         dateOfBirth,
         preferences,
+      } = req.body;
+      const userData = await userService.registration(
+        email,
+        password,
+        country,
+        firstname,
+        lastname,
+        dateOfBirth,
+        preferences
       );
 
       return res.json(userData);
@@ -26,12 +34,12 @@ class UserController {
 
   async getUser(req, res, next) {
     try {
-      const authHeader = req.headers.authorization; // Получаем заголовок Authorization
+      const authHeader = req.headers.authorization;
       if (!authHeader) {
-        throw new Error('Authorization header is missing');
+        throw new Error("Authorization header is missing");
       }
 
-      const token = authHeader.split(' ')[1];
+      const token = authHeader.split(" ")[1];
       const data = tokenService.validateAccessToken(token);
       res.json(data);
     } catch (error) {
@@ -52,7 +60,7 @@ class UserController {
 
   async logout(req, res) {
     try {
-      res.json('ok');
+      res.json("ok");
     } catch (error) {}
   }
 

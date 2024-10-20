@@ -1,10 +1,10 @@
-const userModel = require('../models/user-model');
-const bcrypt = require('bcrypt');
-const uuid = require('uuid');
-const UserDto = require('../dtos/user-dto');
-const ApiError = require('../exceptions/api-error');
-const eventModel = require('../models/event-model');
-const tokenService = require('./token-service');
+const userModel = require("../models/user-model");
+const bcrypt = require("bcrypt");
+const uuid = require("uuid");
+const UserDto = require("../dtos/user-dto");
+const ApiError = require("../exceptions/api-error");
+const eventModel = require("../models/event-model");
+const tokenService = require("./token-service");
 
 class EventService {
   async getEvents(filter, page = 1, limit = 10) {
@@ -22,7 +22,7 @@ class EventService {
 
     // Если передан title, добавляем фильтр по title
     if (filter.title) {
-      query.title = { $regex: filter.title, $options: 'i' }; // Ищем по частичному совпадению без учета регистра
+      query.title = { $regex: filter.title, $options: "i" }; // Ищем по частичному совпадению без учета регистра
     }
 
     // Вычисляем количество пропускаемых событий (для пагинации)
@@ -53,7 +53,9 @@ class EventService {
     }
 
     const events = await eventModel.find({
-      creator: { $in: await userModel.find({ email: user.email }).select('_id') },
+      creator: {
+        $in: await userModel.find({ email: user.email }).select("_id"),
+      },
     });
     return events;
   }
@@ -61,11 +63,11 @@ class EventService {
   async getEvent(eventId) {
     const event = await eventModel
       .findById(eventId)
-      .populate('comments') // Подгружаем комментарии
-      .populate('creator', ['firstname', 'lastname']);
+      .populate("comments") // Подгружаем комментарии
+      .populate("creator", ["firstname", "lastname"]);
 
     if (!event) {
-      throw ApiError.BadRequest('Event not found');
+      throw ApiError.BadRequest("Event not found");
     }
 
     return event;
@@ -83,18 +85,46 @@ class EventService {
   }
 
   async editEvent(eventId, data) {
-    const event = await eventModel.findByIdAndUpdate(eventId, data, { new: true });
+    const event = await eventModel.findByIdAndUpdate(eventId, data, {
+      new: true,
+    });
     if (!event) {
-      throw ApiError.BadRequest('Event not found');
+      throw ApiError.BadRequest("Event not found");
     }
     return event;
   }
   async deleteEvent(eventId) {
     const deletedEvent = await eventModel.findByIdAndDelete(eventId);
     if (!deletedEvent) {
-      throw ApiError.BadRequest('Event not found');
+      throw ApiError.BadRequest("Event not found");
     }
     return deletedEvent;
+  }
+
+  async saveEvent(eventId, userData) {
+    const user = await userModel.findById(userData.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Добавляем eventId в массив saved
+    if (!user.saved.includes(eventId)) {
+      // Проверка, что событие не добавлено ранее
+      user.saved.push(eventId);
+    }
+
+    // Сохраняем изменения пользователя
+    await user.save();
+    return user;
+  }
+
+  async getSaved(userData) {
+    const user = await userModel.findById(userData.id);
+
+    const savedId = user.saved;
+
+    const saved = await eventModel.findById(savedId);
+    return saved;
   }
 }
 

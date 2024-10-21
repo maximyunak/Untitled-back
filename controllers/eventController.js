@@ -6,12 +6,19 @@ const userService = require("../servises/user-service");
 class EventController {
   async getEvents(req, res, next) {
     try {
-      // Получаем параметры пагинации и фильтрации из запроса
+      const authHeader = req.headers.authorization; // Получаем заголовок Authorization
+      if (!authHeader) {
+        throw new Error("Authorization header is missing");
+      }
+      const token = authHeader.split(" ")[1];
+
+      const userData = tokenService.validateAccessToken(token);
+
       const eventTypes = req.query.eventTypes
         ? req.query.eventTypes.split(",")
         : [];
-      const page = parseInt(req.query.page, 10) || 1; // Текущая страница (по умолчанию 1)
-      const limit = parseInt(req.query.limit, 10) || 10; // Лимит на количество элементов (по умолчанию 10)
+      const page = parseInt(req.query.page, 10) || 1;
+      const limit = parseInt(req.query.limit, 10) || 10;
       const title = req.query.title;
       const countries = req.query.countries
         ? req.query.countries.split(",")
@@ -21,7 +28,8 @@ class EventController {
       const result = await eventService.getEvents(
         { eventTypes, title, countries },
         page,
-        limit
+        limit,
+        userData
       );
 
       // Возвращаем данные и информацию о пагинации
@@ -40,7 +48,6 @@ class EventController {
       }
       const token = authHeader.split(" ")[1];
       const events = await eventService.getMyEvents(token);
-      console.log(events);
       res.json(events);
     } catch (error) {
       console.log(error);
@@ -125,7 +132,6 @@ class EventController {
 
       const saved = await eventService.getSaved(userData);
 
-      console.log(saved);
       res.json(saved);
     } catch (error) {
       console.log(error);

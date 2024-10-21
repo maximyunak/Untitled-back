@@ -7,7 +7,7 @@ const eventModel = require("../models/event-model");
 const tokenService = require("./token-service");
 
 class EventService {
-  async getEvents(filter, page = 1, limit = 10) {
+  async getEvents(filter, page = 1, limit = 10, userData) {
     const query = {};
 
     // Если были переданы eventTypes, добавляем фильтр
@@ -25,13 +25,28 @@ class EventService {
       query.title = { $regex: filter.title, $options: "i" }; // Ищем по частичному совпадению без учета регистра
     }
 
+    const user = await userModel.findById(userData.id);
+    const savedEventIds = user.saved;
+
     // Вычисляем количество пропускаемых событий (для пагинации)
     const skip = (page - 1) * limit;
 
     // Получаем отфильтрованные события с учетом пагинации
-    const events = await eventModel.find(query).skip(skip).limit(limit);
+    const events = await eventModel
+      .find(query)
+      .skip(skip)
+      .limit(limit)
+      .lean()
+      .then((events) => {
+        return events.map((event) => {
+          // Проверяем, есть ли ID события в массиве сохраненных событий
+          event.saved = savedEventIds.includes(event._id.toString());
+          return event;
+        });
+      });
     // .populate('comments') // Подгружаем комментарии
     // .populate('creator', ['firstname', 'lastname']);
+    console.log(events);
 
     // Также получаем общее количество событий для подсчета страниц
     const totalEvents = await eventModel.countDocuments(query);
@@ -120,11 +135,10 @@ class EventService {
 
   async getSaved(userData) {
     const user = await userModel.findById(userData.id);
+    const savedIds = user.saved; // Предполагается, что это массив
 
-    const savedId = user.saved;
-
-    const saved = await eventModel.findById(savedId);
-    return saved;
+    const savedEvents = await eventModel.find({ _id: { $in: savedIds } });
+    return savedEvents; // Теперь вы получите массив событий
   }
 }
 

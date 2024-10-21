@@ -46,7 +46,6 @@ class EventService {
       });
     // .populate('comments') // Подгружаем комментарии
     // .populate('creator', ['firstname', 'lastname']);
-    console.log(events);
 
     // Также получаем общее количество событий для подсчета страниц
     const totalEvents = await eventModel.countDocuments(query);
@@ -118,18 +117,25 @@ class EventService {
 
   async saveEvent(eventId, userData) {
     const user = await userModel.findById(userData.id);
+
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return { message: "User not found" }; // Возвращаем объект с сообщением об ошибке
     }
 
-    // Добавляем eventId в массив saved
-    if (!user.saved.includes(eventId)) {
-      // Проверка, что событие не добавлено ранее
+    const savedEventIndex = user.saved.indexOf(eventId);
+
+    // Если событие уже есть в массиве saved
+    if (savedEventIndex !== -1) {
+      // Удаляем событие из массива
+      user.saved.splice(savedEventIndex, 1);
+    } else {
+      // Если события нет в массиве saved, добавляем его
       user.saved.push(eventId);
     }
 
     // Сохраняем изменения пользователя
     await user.save();
+
     return user;
   }
 

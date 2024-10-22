@@ -22,45 +22,57 @@ class EventService {
 
     // Если передан title, добавляем фильтр по title
     if (filter.title) {
-      query.title = { $regex: filter.title, $options: "i" }; // Ищем по частичному совпадению без учета регистра
+      query.title = { $regex: filter.title, $options: "i" };
     }
 
-    const user = await userModel.findById(userData.id);
-    const savedEventIds = user.saved;
+    // Если пользователь аутентифицирован
+    if (userData) {
+      const user = await userModel.findById(userData.id);
+      const savedEventIds = user.saved;
 
-    // Вычисляем количество пропускаемых событий (для пагинации)
-    const skip = (page - 1) * limit;
+      // Вычисляем количество пропускаемых событий (для пагинации)
+      const skip = (page - 1) * limit;
 
-    // Получаем отфильтрованные события с учетом пагинации
-    const events = await eventModel
-      .find(query)
-      .skip(skip)
-      .limit(limit)
-      .lean()
-      .then((events) => {
-        return events.map((event) => {
-          // Проверяем, есть ли ID события в массиве сохраненных событий
-          event.saved = savedEventIds.includes(event._id.toString());
-          return event;
+      // Получаем отфильтрованные события с учетом пагинации
+      const events = await eventModel
+        .find(query)
+        .skip(skip)
+        .limit(limit)
+        .lean()
+        .then((events) => {
+          return events.map((event) => {
+            // Проверяем, есть ли ID события в массиве сохраненных событий
+            event.saved = savedEventIds.includes(event._id.toString());
+            return event;
+          });
         });
-      });
-    // .populate('comments') // Подгружаем комментарии
-    // .populate('creator', ['firstname', 'lastname']);
 
-    // Также получаем общее количество событий для подсчета страниц
-    const totalEvents = await eventModel.countDocuments(query);
+      // Также получаем общее количество событий для подсчета страниц
+      const totalEvents = await eventModel.countDocuments(query);
 
-    return {
-      events,
-      totalEvents,
-      totalPages: Math.ceil(totalEvents / limit),
-      currentPage: page,
-    };
+      return {
+        events,
+        totalEvents,
+        totalPages: Math.ceil(totalEvents / limit),
+        currentPage: page,
+      };
+    } else {
+      // Если токен не валиден, просто получаем все события без фильтрации
+      const skip = (page - 1) * limit;
+      const events = await eventModel.find(query).skip(skip).limit(limit);
+      const totalEvents = await eventModel.countDocuments(query);
+
+      return {
+        events,
+        totalEvents,
+        totalPages: Math.ceil(totalEvents / limit),
+        currentPage: page,
+      };
+    }
   }
 
   async getMyEvents(token) {
     const user = tokenService.validateAccessToken(token);
-    console.log(user);
 
     if (!user) {
       return null; // Or throw an error if token is invalid

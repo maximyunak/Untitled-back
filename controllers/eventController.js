@@ -7,12 +7,13 @@ class EventController {
   async getEvents(req, res, next) {
     try {
       const authHeader = req.headers.authorization; // Получаем заголовок Authorization
-      if (!authHeader) {
-        throw new Error("Authorization header is missing");
-      }
-      const token = authHeader.split(" ")[1];
+      let userData = null;
 
-      const userData = tokenService.validateAccessToken(token);
+      if (authHeader) {
+        const token = authHeader.split(" ")[1];
+
+        userData = tokenService.validateAccessToken(token); // Пытаемся проверить токен
+      }
 
       const eventTypes = req.query.eventTypes
         ? req.query.eventTypes.split(",")

@@ -72,18 +72,35 @@ class EventService {
   }
 
   async getMyEvents(token) {
-    const user = tokenService.validateAccessToken(token);
-
+    const userData = tokenService.validateAccessToken(token);
+    const user = await userModel.findOne({ email: userData.email });
     if (!user) {
       return null; // Or throw an error if token is invalid
     }
+    const savedEventIds = user.saved;
 
-    const events = await eventModel.find({
-      creator: {
-        $in: await userModel.find({ email: user.email }).select("_id"),
-      },
-    });
+    const events = await eventModel
+      .find({
+        creator: {
+          $in: await userModel.find({ email: user.email }).select("_id"),
+        },
+      })
+      .lean()
+      .then((events) => {
+        return events.map((event) => {
+          // Проверяем, есть ли ID события в массиве сохраненных событий
+          event.saved = savedEventIds.includes(event._id.toString());
+          return event;
+        });
+      });
+
     return events;
+
+    // return events.map((event) => {
+    //   event.saved = savedEventIds.includes(event._id.toString());
+
+    //   return event;
+    // });
   }
 
   async getEvent(eventId) {

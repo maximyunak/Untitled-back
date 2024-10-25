@@ -95,12 +95,6 @@ class EventService {
       });
 
     return events;
-
-    // return events.map((event) => {
-    //   event.saved = savedEventIds.includes(event._id.toString());
-
-    //   return event;
-    // });
   }
 
   async getEvent(eventId) {
@@ -136,12 +130,18 @@ class EventService {
     }
     return event;
   }
-  async deleteEvent(eventId) {
-    const deletedEvent = await eventModel.findByIdAndDelete(eventId);
-    if (!deletedEvent) {
-      throw ApiError.BadRequest("Event not found");
+  async deleteEvent(eventId, userData) {
+    const deletedEvent = await eventModel.findById(eventId);
+
+    if (deletedEvent.creator.toString() === userData.id.toString()) {
+      const deletedEvent = await eventModel.findByIdAndDelete(eventId);
+      if (!deletedEvent) {
+        throw ApiError.BadRequest("Event not found");
+      }
+      return deletedEvent;
+    } else {
+      return "You are not the creator of the event";
     }
-    return deletedEvent;
   }
 
   async saveEvent(eventId, userData) {

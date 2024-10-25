@@ -1,4 +1,4 @@
-const { Schema, model } = require('mongoose');
+const { Schema, model } = require("mongoose");
 
 const EventSchema = new Schema({
   country: { type: String, required: true },
@@ -12,16 +12,15 @@ const EventSchema = new Schema({
   },
   eventTypes: { type: [String] },
   creator: {
-    // Поле для ссылки на создателя
     type: Schema.Types.ObjectId,
-    ref: 'User', // Ссылка на модель User
+    ref: "User",
   },
   comments: [
     {
       type: Schema.Types.ObjectId,
-      ref: 'Comment', // Массив ссылок на комментарии
+      ref: "Comment",
     },
   ],
 });
 
-module.exports = model('Event', EventSchema);
+module.exports = model("Event", EventSchema);

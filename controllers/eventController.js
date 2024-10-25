@@ -1,3 +1,4 @@
+const { getUserData } = require("../helpers/getUserData");
 const userModel = require("../models/user-model");
 const eventService = require("../servises/event-service");
 const tokenService = require("../servises/token-service");
@@ -94,7 +95,9 @@ class EventController {
   async deleteEvent(req, res, next) {
     try {
       const eventId = req.params.id;
-      const deletedEvent = await eventService.deleteEvent(eventId);
+      const userData = getUserData(req);
+
+      const deletedEvent = await eventService.deleteEvent(eventId, userData);
       res.json(deletedEvent); // Возвращаем удалённое событие
     } catch (error) {
       console.log(error);
